@@ -1,14 +1,18 @@
-DROP DATABASE IF EXISTS staff_db;
-CREATE DATABASE staff_db;
+-- Per the acceptence criteria three tables were created for department, role, and employee
 
-USE staff_db;
+DROP DATABASE IF EXISTS company_db;
+CREATE DATABASE company_db;
+
+USE company_db;
 
 CREATE TABLE department (
+
   id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(30) NOT NULL
 );
 
 CREATE TABLE role (
+
   id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
   title VARCHAR(30),
   salary DECIMAL,
@@ -19,6 +23,7 @@ CREATE TABLE role (
 );
 
 CREATE TABLE employee (
+
   id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
   first_name VARCHAR(30),
   last_name VARCHAR(30),
@@ -31,3 +36,7 @@ CREATE TABLE employee (
   REFERENCES employee(id)
   ON DELETE SET NULL
 );
+
+-- References
+
+-- Class module on sql and mysql schemas
