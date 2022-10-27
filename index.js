@@ -1,22 +1,28 @@
 
 
-
 const mysql = require('mysql2');
 
 const conTab = require('console.table');
+
+const inquirer = require('inquirer');
 
 const db = mysql.createConnection(
 
     {
       host: 'localhost',
+
       user: 'root',
-      password: '',
-      database: 'staff_db'
+
+      password: 'none',
+
+      database: 'company_db'
     },
-    console.log(`Connected to the staff_db database.`)
+    console.log(`Connection with company_db database complete`)
 );
 
-const inquirer = require('inquirer');
+
+
+//------------------------------------------------------------------------------------------------------------------------------------//
 
 const questionGenerate = () => {
     return inquirer.prompt([
@@ -68,24 +74,31 @@ const questionGenerate = () => {
     })
 };
 
+//----------------------------------------------------------------------------------------------------------------------------------//
+
 // Initiates user prompt
 questionGenerate();
 
 const seeDeps = () => {
-    db.query(`SELECT * FROM department`, function (err, results) {
+    db.query(`SELECT * FROM department`, function (err, response) {
         console.log(`\n`);
-        console.table(results);
+        console.table(response);
         questionGenerate();
     })
 }
 
+
+//-----------------------------------------------------------------------------------------------------------------------------------//
+
 const seeJobs = () => {
-    db.query(`SELECT * FROM role`, function (err, results) {
+    db.query(`SELECT * FROM role`, function (err, response) {
         console.log(`\n`);
-        console.table(results);
+        console.table(response);
         questionGenerate();
     })
 }
+
+//----------------------------------------------------------------------------------------------------------------------------------//
 
 const seeWorkers = () => {
     db.query(`
@@ -99,12 +112,14 @@ const seeWorkers = () => {
     employees_with_managers.manager_name
     FROM employee_info
     JOIN employees_with_managers on employee_info.role_id = employees_with_managers.role_id;
-    `, function (err, results) {
+    `, function (err, response) {
         console.log(`\n`);
-        console.table(results);
+        console.table(response);
         questionGenerate();
     })
 }
+
+//-----------------------------------------------------------------------------------------------------------------------------------//
 const newDep = () => {
     return inquirer.prompt([
         {
@@ -114,17 +129,20 @@ const newDep = () => {
         }
     ])
     .then((info) => {
-        db.query(`INSERT INTO department (name) VALUES (?)`, info.name, (err, results) => {
+        db.query(`INSERT INTO department (name) VALUES (?)`, info.name, (err, response) => {
             console.log("\nNew department added. See below:");
             seeDeps();
         })
     })
 }
+
+
+//--------------------------------------------------------------------------------------------------------------------------------------//
 const newJob = () => {
     let departmentArray = [];
-    db.query(`SELECT * FROM department`, function (err, results) {
-        for (let i = 0; i < results.length; i++) {
-            departmentArray.push(results[i].name);
+    db.query(`SELECT * FROM department`, function (err, response) {
+        for (let i = 0; i < response.length; i++) {
+            departmentArray.push(response[i].name);
         }
         return inquirer.prompt([
             {
@@ -146,10 +164,10 @@ const newJob = () => {
         ])
         .then((info) => {
             // Get's department id
-            db.query(`SELECT id FROM department WHERE department.name = ?`, info.department, (err, results) => {
-                let department_id = results[0].id;
+            db.query(`SELECT id FROM department WHERE department.name = ?`, info.department, (err, response) => {
+                let department_id = response[0].id;
             db.query(`INSERT INTO role(title, salary, department_id)
-            VALUES (?,?,?)`, [info.title, info.salary, department_id], (err, results) => {
+            VALUES (?,?,?)`, [info.title, info.salary, department_id], (err, response) => {
                 console.log("\nNew role added. See below:");
                 seeJobs();
             })
@@ -158,18 +176,20 @@ const newJob = () => {
     })
 }
 
+//-----------------------------------------------------------------------------------------------------------------------------------//
+
 const newWorker = () => {
     const roleArray= [];
     const employeeArray= [];
     // populates role array with all roles
-    db.query(`SELECT * FROM role`, function (err, results) {
-        for (let i = 0; i < results.length; i++) {
-            roleArray.push(results[i].title);
+    db.query(`SELECT * FROM role`, function (err, response) {
+        for (let i = 0; i < response.length; i++) {
+            roleArray.push(response[i].title);
         }
     // populates employee array with all employees
-    db.query(`SELECT * FROM employee`, function (err, results) {
-        for (let i = 0; i < results.length; i++) {
-            let employeeName = `${results[i].first_name} ${results[i].last_name}`
+    db.query(`SELECT * FROM employee`, function (err, response) {
+        for (let i = 0; i < response.length; i++) {
+            let employeeName = `${response[i].first_name} ${response[i].last_name}`
             employeeArray.push(employeeName);
         }
         return inquirer.prompt([
@@ -202,8 +222,8 @@ const newWorker = () => {
             let role_id = '';
             let manager = '';
             // populates role id
-            db.query(`SELECT id FROM role WHERE role.title = ?`, info.role, (err, results) => {
-                role_id = results[0].id;
+            db.query(`SELECT id FROM role WHERE role.title = ?`, info.role, (err, response) => {
+                role_id = response[0].id;
             });
             if (info.has_manager === "Yes") {
                 return inquirer.prompt([
@@ -215,13 +235,13 @@ const newWorker = () => {
                     }   
                 ]).then((info) => {
                     // get role id
-                    db.query(`SELECT id FROM role WHERE role.title = ?`, roleName, (err, results) => {
-                        role_id = results[0].id;
+                    db.query(`SELECT id FROM role WHERE role.title = ?`, roleName, (err, response) => {
+                        role_id = response[0].id;
                     })
-                    db.query(`SELECT id FROM employee WHERE employee.first_name = ? AND employee.last_name = ?;`, info.manager.split(" "), (err, results) => {
-                        manager = results[0].id;
+                    db.query(`SELECT id FROM employee WHERE employee.first_name = ? AND employee.last_name = ?;`, info.manager.split(" "), (err, response) => {
+                        manager = response[0].id;
                         db.query(`INSERT INTO employee (first_name, last_name, role_id, manager_id) 
-                        VALUES (?,?,?,?)`, [first_name, last_name, role_id, manager], (err, results) => {
+                        VALUES (?,?,?,?)`, [first_name, last_name, role_id, manager], (err, response) => {
                             console.log("\nNew employee added. See below:");
                             seeWorkers();
                         })
@@ -231,11 +251,11 @@ const newWorker = () => {
                 // sets manager to null
                 manager = null;
                 // get role id
-                db.query(`SELECT id FROM role WHERE role.title = ?`, roleName, (err, results) => {
-                    role_id = results[0].id;
+                db.query(`SELECT id FROM role WHERE role.title = ?`, roleName, (err, response) => {
+                    role_id = response[0].id;
                     // query 555 still doesnt work even when manager is null
                     db.query(`INSERT INTO employee (first_name, last_name, role_id, manager_id) 
-                    VALUES (?,?,?,?)`, [info.first_name, info.last_name, role_id, manager], (err, results) => {
+                    VALUES (?,?,?,?)`, [info.first_name, info.last_name, role_id, manager], (err, response) => {
                         console.log("\nNew employee added. See below:");
                         seeWorkers();
                     })
@@ -246,19 +266,20 @@ const newWorker = () => {
 })
 }
 
+//-----------------------------------------------------------------------------------------------------------------------------------//
 
 const newJobDescription = () => {
     const roleArray= [];
     const employeeArray= [];
     // populates role array with all roles
-    db.query(`SELECT * FROM role`, function (err, results) {
-        for (let i = 0; i < results.length; i++) {
-            roleArray.push(results[i].title);
+    db.query(`SELECT * FROM role`, function (err, response) {
+        for (let i = 0; i < response.length; i++) {
+            roleArray.push(response[i].title);
         }
     // populates employee array with all employees
-    db.query(`SELECT * FROM employee`, function (err, results) {
-        for (let i = 0; i < results.length; i++) {
-            let employeeName = `${results[i].first_name} ${results[i].last_name}`
+    db.query(`SELECT * FROM employee`, function (err, response) {
+        for (let i = 0; i < response.length; i++) {
+            let employeeName = `${response[i].first_name} ${response[i].last_name}`
             employeeArray.push(employeeName);
         }
         return inquirer.prompt([
@@ -276,10 +297,10 @@ const newJobDescription = () => {
             },
         ]).then((info) => {
             // get role id
-            db.query(`SELECT id FROM role WHERE role.title = ?;`, info.role, (err, results) => {
-                role_id = results[0].id;
-                db.query(`SELECT id FROM employee WHERE employee.first_name = ? AND employee.last_name = ?;`, info.employee.split(" "), (err, results) => {
-                    db.query(`UPDATE employee SET role_id = ? WHERE id = ?;`, [role_id, results[0].id], (err, results) => {
+            db.query(`SELECT id FROM role WHERE role.title = ?;`, info.role, (err, response) => {
+                role_id = response[0].id;
+                db.query(`SELECT id FROM employee WHERE employee.first_name = ? AND employee.last_name = ?;`, info.employee.split(" "), (err, response) => {
+                    db.query(`UPDATE employee SET role_id = ? WHERE id = ?;`, [role_id, response[0].id], (err, response) => {
                         console.log("\nEmployee role updated. See below:");
                         seeWorkers();
                     })
