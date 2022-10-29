@@ -1,8 +1,10 @@
+//Reduired dependencies are below
+
 
 
 const mysql = require('mysql2');
 
-const conTab = require('console.table');
+const cTable = require('console.table');
 
 const inquirer = require('inquirer');
 
@@ -15,9 +17,9 @@ const db = mysql.createConnection(
 
       password: 'none',
 
-      database: 'company_db'
+      database: 'tracker_db'
     },
-    console.log(`Connection with company_db database complete`)
+    console.log(`Connection with tracker_db database complete`)
 );
 
 
@@ -25,11 +27,12 @@ const db = mysql.createConnection(
 //------------------------------------------------------------------------------------------------------------------------------------//
 
 const questionGenerate = () => {
+
     return inquirer.prompt([
         {
             type: 'list',
-            message: "Which action would you like to take?",
-            name: 'selection',
+            message: "What do you want to do?",
+            name: 'choices',
             choices: [
                 "View all departments",
                 "View all roles",

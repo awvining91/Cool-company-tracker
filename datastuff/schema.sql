@@ -2,11 +2,11 @@
 
 -- Per the acceptence criteria three tables were created for department, role, and employee
 
-DROP DATABASE IF EXISTS company_db;
+DROP DATABASE IF EXISTS tracker_db;
 
-CREATE DATABASE company_db;
+CREATE DATABASE tracker_db;
 
-USE company_db;
+USE tracker_db;
 
 CREATE TABLE department (
 
