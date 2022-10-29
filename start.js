@@ -26,6 +26,7 @@ const db = mysql.createConnection(
 
 //------------------------------------------------------------------------------------------------------------------------------------//
 
+//Inquirer questions here 
 const questionGenerate = () => {
 
     return inquirer.prompt([
@@ -34,43 +35,43 @@ const questionGenerate = () => {
             message: "What do you want to do?",
             name: 'choices',
             choices: [
-                "View all departments",
-                "View all roles",
-                "View all employees",
-                "Add a department",
-                "Add a role",
-                "Add an employee",
-                "Update an employee role"
+                "See departments",
+                "See jobs",
+                "See workers",
+                "New department",
+                "New job",
+                "New worker",
+                "Add to job description"
             ]
         }
     ])
     .then((info) => {
         switch (info.selection) {
-            case "View all departments":
+            case "See departments":
                 seeDeps();
                 break;
 
-            case "View all roles":
+            case "See jobs":
                 seeJobs();
                 break;
                 
-            case "View all employees":
+            case "See workers":
                 seeWorkers();
                 break;
             
-            case "Add a department":
+            case "New department":
                 newDep();
                 break;
         
-            case "Add a role":
+            case "New job":
                 newJob();
                 break;
             
-            case "Add an employee":
+            case "New worker":
                 newWorker();
                 break;
                 
-            case "Update an employee role":
+            case "Add to job description":
                 newJobDescription();
                 break;
         }
@@ -79,12 +80,14 @@ const questionGenerate = () => {
 
 //----------------------------------------------------------------------------------------------------------------------------------//
 
-// Initiates user prompt
+// This calls the function to start the questions for the user
 questionGenerate();
 
 const seeDeps = () => {
-    db.query(`SELECT * FROM department`, function (err, response) {
+    db.query(`SELECT * FROM department`, function (error, response) {
+
         console.log(`\n`);
+
         console.table(response);
         questionGenerate();
     })
@@ -93,8 +96,10 @@ const seeDeps = () => {
 
 //-----------------------------------------------------------------------------------------------------------------------------------//
 
+//Let's you see all the jobs!
+
 const seeJobs = () => {
-    db.query(`SELECT * FROM role`, function (err, response) {
+    db.query(`SELECT * FROM role`, function (error, response) {
         console.log(`\n`);
         console.table(response);
         questionGenerate();
@@ -103,7 +108,10 @@ const seeJobs = () => {
 
 //----------------------------------------------------------------------------------------------------------------------------------//
 
+//Let's you look at all the workers!
+
 const seeWorkers = () => {
+
     db.query(`
     SELECT
     employees_with_managers.id AS employee_id,
@@ -115,7 +123,8 @@ const seeWorkers = () => {
     employees_with_managers.manager_name
     FROM employee_info
     JOIN employees_with_managers on employee_info.role_id = employees_with_managers.role_id;
-    `, function (err, response) {
+    `, function (error, response) {
+        
         console.log(`\n`);
         console.table(response);
         questionGenerate();
@@ -123,17 +132,20 @@ const seeWorkers = () => {
 }
 
 //-----------------------------------------------------------------------------------------------------------------------------------//
+
+//Adds new department!
+
 const newDep = () => {
     return inquirer.prompt([
         {
             type: 'input',
-            message: "What is the name of the new department?",
+            message: "What's the name of the new department?",
             name: 'name'
         }
     ])
     .then((info) => {
-        db.query(`INSERT INTO department (name) VALUES (?)`, info.name, (err, response) => {
-            console.log("\nNew department added. See below:");
+        db.query(`INSERT INTO department (name) VALUES (?)`, info.name, (error, response) => {
+            console.log("\nNew department detected. See changes:");
             seeDeps();
         })
     })
@@ -141,37 +153,44 @@ const newDep = () => {
 
 
 //--------------------------------------------------------------------------------------------------------------------------------------//
+
+//Adds new job type!
+
 const newJob = () => {
-    let departmentArray = [];
-    db.query(`SELECT * FROM department`, function (err, response) {
+    let depDataGroup = [];
+
+    db.query(`SELECT * FROM department`, function (error, response) {
         for (let i = 0; i < response.length; i++) {
-            departmentArray.push(response[i].name);
+            depDataGroup.push(response[i].name);
         }
         return inquirer.prompt([
             {
                 type: 'input',
-                message: "What is the name of the new role?",
+                message: "What's the name of the new job?",
                 name: 'title',
             },
             {
                 type: 'input',
-                message: "What is the salary of the new role?",
-                name: 'salary',
+                message: "How much moolah does it pay?",
+                name: 'money',
             },
             {
                 type: 'list',
-                message: "What department is the role under?",
+                message: "What department is it in?",
                 name: 'department',
-                choices: departmentArray
+                choices: depDataGroup
             }
         ])
+
         .then((info) => {
-            // Get's department id
-            db.query(`SELECT id FROM department WHERE department.name = ?`, info.department, (err, response) => {
+            // Retreives id for departments
+
+            db.query(`SELECT id FROM department WHERE department.name = ?`, info.department, (error, response) => {
                 let department_id = response[0].id;
-            db.query(`INSERT INTO role(title, salary, department_id)
-            VALUES (?,?,?)`, [info.title, info.salary, department_id], (err, response) => {
-                console.log("\nNew role added. See below:");
+
+            db.query(`INSERT INTO role(title, money, department_id)
+            VALUES (?,?,?)`, [info.title, info.salary, department_id], (error, response) => {
+                console.log("\nNew job addes, see changes:");
                 seeJobs();
             })
             });
@@ -181,19 +200,24 @@ const newJob = () => {
 
 //-----------------------------------------------------------------------------------------------------------------------------------//
 
+//Adds new employee!!
+
 const newWorker = () => {
-    const roleArray= [];
-    const employeeArray= [];
-    // populates role array with all roles
-    db.query(`SELECT * FROM role`, function (err, response) {
+
+    const jobDataGroup= [];
+    const empDataGroup= [];
+
+    // Fills array with data for all jobs
+    
+    db.query(`SELECT * FROM role`, function (error, response) {
         for (let i = 0; i < response.length; i++) {
-            roleArray.push(response[i].title);
+            jobDataGroup.push(response[i].title);
         }
     // populates employee array with all employees
-    db.query(`SELECT * FROM employee`, function (err, response) {
+    db.query(`SELECT * FROM employee`, function (error, response) {
         for (let i = 0; i < response.length; i++) {
             let employeeName = `${response[i].first_name} ${response[i].last_name}`
-            employeeArray.push(employeeName);
+            empDataGroup.push(employeeName);
         }
         return inquirer.prompt([
             {
@@ -210,7 +234,7 @@ const newWorker = () => {
                 type: 'list',
                 message: "What is the employee's role?",
                 name: 'role',
-                choices: roleArray
+                choices: jobDataGroup
             },
             {
                 type: 'list',
@@ -225,7 +249,7 @@ const newWorker = () => {
             let role_id = '';
             let manager = '';
             // populates role id
-            db.query(`SELECT id FROM role WHERE role.title = ?`, info.role, (err, response) => {
+            db.query(`SELECT id FROM role WHERE role.title = ?`, info.role, (error, response) => {
                 role_id = response[0].id;
             });
             if (info.has_manager === "Yes") {
@@ -234,17 +258,17 @@ const newWorker = () => {
                     type: 'list',
                     message: "Please select the employees manager",
                     name: 'manager',
-                    choices: employeeArray
+                    choices: empDataGroup
                     }   
                 ]).then((info) => {
                     // get role id
-                    db.query(`SELECT id FROM role WHERE role.title = ?`, roleName, (err, response) => {
+                    db.query(`SELECT id FROM role WHERE role.title = ?`, roleName, (error, response) => {
                         role_id = response[0].id;
                     })
-                    db.query(`SELECT id FROM employee WHERE employee.first_name = ? AND employee.last_name = ?;`, info.manager.split(" "), (err, response) => {
+                    db.query(`SELECT id FROM employee WHERE employee.first_name = ? AND employee.last_name = ?;`, info.manager.split(" "), (error, response) => {
                         manager = response[0].id;
                         db.query(`INSERT INTO employee (first_name, last_name, role_id, manager_id) 
-                        VALUES (?,?,?,?)`, [first_name, last_name, role_id, manager], (err, response) => {
+                        VALUES (?,?,?,?)`, [first_name, last_name, role_id, manager], (error, response) => {
                             console.log("\nNew employee added. See below:");
                             seeWorkers();
                         })
@@ -254,11 +278,11 @@ const newWorker = () => {
                 // sets manager to null
                 manager = null;
                 // get role id
-                db.query(`SELECT id FROM role WHERE role.title = ?`, roleName, (err, response) => {
+                db.query(`SELECT id FROM role WHERE role.title = ?`, roleName, (error, response) => {
                     role_id = response[0].id;
                     // query 555 still doesnt work even when manager is null
                     db.query(`INSERT INTO employee (first_name, last_name, role_id, manager_id) 
-                    VALUES (?,?,?,?)`, [info.first_name, info.last_name, role_id, manager], (err, response) => {
+                    VALUES (?,?,?,?)`, [info.first_name, info.last_name, role_id, manager], (error, response) => {
                         console.log("\nNew employee added. See below:");
                         seeWorkers();
                     })
@@ -272,38 +296,43 @@ const newWorker = () => {
 //-----------------------------------------------------------------------------------------------------------------------------------//
 
 const newJobDescription = () => {
-    const roleArray= [];
-    const employeeArray= [];
-    // populates role array with all roles
-    db.query(`SELECT * FROM role`, function (err, response) {
+
+    const jobDataGroup= [];
+    const empDataGroup= [];
+
+    // Fills array with new jobs and such
+
+    db.query(`SELECT * FROM role`, function (error, response) {
         for (let i = 0; i < response.length; i++) {
-            roleArray.push(response[i].title);
+            jobDataGroup.push(response[i].title);
         }
-    // populates employee array with all employees
-    db.query(`SELECT * FROM employee`, function (err, response) {
+    // Fills array with new employee info
+
+    db.query(`SELECT * FROM employee`, function (error, response) {
         for (let i = 0; i < response.length; i++) {
+
             let employeeName = `${response[i].first_name} ${response[i].last_name}`
-            employeeArray.push(employeeName);
+            empDataGroup.push(employeeName);
         }
         return inquirer.prompt([
             {
                 type: 'list',
                 message: "Which employee do you want to update?",
                 name: 'employee',
-                choices: employeeArray
+                choices: empDataGroup
             },
             {
                 type: 'list',
                 message: "What is the employee's new role?",
                 name: 'role',
-                choices: roleArray
+                choices: jobDataGroup
             },
         ]).then((info) => {
             // get role id
-            db.query(`SELECT id FROM role WHERE role.title = ?;`, info.role, (err, response) => {
+            db.query(`SELECT id FROM role WHERE role.title = ?;`, info.role, (error, response) => {
                 role_id = response[0].id;
-                db.query(`SELECT id FROM employee WHERE employee.first_name = ? AND employee.last_name = ?;`, info.employee.split(" "), (err, response) => {
-                    db.query(`UPDATE employee SET role_id = ? WHERE id = ?;`, [role_id, response[0].id], (err, response) => {
+                db.query(`SELECT id FROM employee WHERE employee.first_name = ? AND employee.last_name = ?;`, info.employee.split(" "), (error, response) => {
+                    db.query(`UPDATE employee SET role_id = ? WHERE id = ?;`, [role_id, response[0].id], (error, response) => {
                         console.log("\nEmployee role updated. See below:");
                         seeWorkers();
                     })
