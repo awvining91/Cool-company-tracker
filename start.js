@@ -122,7 +122,7 @@ const seeWorkers = () => {
     employee_info.department_name,
     employees_with_managers.manager_name
     FROM employee_info
-    JOIN employees_with_managers on employee_info.role_id = employees_with_managers.role_id;
+    JOIN employees_with_managers on employee_info.job_typeID = employees_with_managers.job_typeID;
     `, function (error, response) {
         
         console.log(`\n`);
@@ -205,84 +205,97 @@ const newJob = () => {
 const newWorker = () => {
 
     const jobDataGroup= [];
+
     const empDataGroup= [];
 
     // Fills array with data for all jobs
-    
+
     db.query(`SELECT * FROM role`, function (error, response) {
         for (let i = 0; i < response.length; i++) {
+
             jobDataGroup.push(response[i].title);
         }
-    // populates employee array with all employees
+    // Fills array with data for all employees
     db.query(`SELECT * FROM employee`, function (error, response) {
+
         for (let i = 0; i < response.length; i++) {
+
             let employeeName = `${response[i].first_name} ${response[i].last_name}`
             empDataGroup.push(employeeName);
         }
         return inquirer.prompt([
             {
                 type: 'input',
-                message: "What is the employee's first name?",
+                message: "What's their first name?",
                 name: 'first_name',
             },
             {
                 type: 'input',
-                message: "What is the employee's last name?",
+                message: "What's their last name?",
                 name: 'last_name',
             },
             {
                 type: 'list',
-                message: "What is the employee's role?",
+                message: "What's their job description?",
                 name: 'role',
                 choices: jobDataGroup
             },
             {
                 type: 'list',
-                message: "Does the employee have a manager?",
+                message: "Do they have an overlord/boss?",
                 name: 'has_manager',
-                choices: ["Yes", "No"]
+                choices: ["Ya", "Nah"]
             }
         ]).then((info) => {
-            let roleName = info.role;
+
+            let jobType = info.role;
             let first_name = info.first_name;
             let last_name = info.last_name;
-            let role_id = '';
+            let job_typeID = '';
             let manager = '';
-            // populates role id
+
+            // Fills out the Ids for the jobs
             db.query(`SELECT id FROM role WHERE role.title = ?`, info.role, (error, response) => {
-                role_id = response[0].id;
+                job_typeID = response[0].id;
             });
-            if (info.has_manager === "Yes") {
+            if (info.has_manager === "Ya") {
                 return inquirer.prompt([
+
                     {
                     type: 'list',
-                    message: "Please select the employees manager",
+                    message: "Tell us the manager's name",
                     name: 'manager',
                     choices: empDataGroup
                     }   
                 ]).then((info) => {
                     // get role id
-                    db.query(`SELECT id FROM role WHERE role.title = ?`, roleName, (error, response) => {
-                        role_id = response[0].id;
+                    db.query(`SELECT id FROM role WHERE role.title = ?`, jobType, (error, response) => {
+                        job_typeID = response[0].id;
                     })
                     db.query(`SELECT id FROM employee WHERE employee.first_name = ? AND employee.last_name = ?;`, info.manager.split(" "), (error, response) => {
                         manager = response[0].id;
-                        db.query(`INSERT INTO employee (first_name, last_name, role_id, manager_id) 
-                        VALUES (?,?,?,?)`, [first_name, last_name, role_id, manager], (error, response) => {
+
+                        db.query(`INSERT INTO employee (first_name, last_name, job_typeID, manager_id) 
+                        VALUES (?,?,?,?)`, [first_name, last_name, job_typeID, manager], (error, response) => {
                             console.log("\nNew employee added. See below:");
                             seeWorkers();
                         })
                     })
                 })
+
             } else {
-                // sets manager to null
+                // Make manager a null value to avoid errors!
+
                 manager = null;
-                // get role id
-                db.query(`SELECT id FROM role WHERE role.title = ?`, roleName, (error, response) => {
-                    role_id = response[0].id;
-                    // query 555 still doesnt work even when manager is null
-                    db.query(`INSERT INTO employee (first_name, last_name, role_id, manager_id) 
-                    VALUES (?,?,?,?)`, [info.first_name, info.last_name, role_id, manager], (error, response) => {
+
+                // Retrieves job ID
+                db.query(`SELECT id FROM role WHERE role.title = ?`, jobType, (error, response) => {
+                    job_typeID = response[0].id;
+
+                    // Trying to correct error
+
+                    db.query(`INSERT INTO employee (first_name, last_name, job_typeID, manager_id) 
+                    VALUES (?,?,?,?)`, [info.first_name, info.last_name, job_typeID, manager], (error, response) => {
                         console.log("\nNew employee added. See below:");
                         seeWorkers();
                     })
@@ -295,9 +308,12 @@ const newWorker = () => {
 
 //-----------------------------------------------------------------------------------------------------------------------------------//
 
+//Add new job description!
+
 const newJobDescription = () => {
 
     const jobDataGroup= [];
+
     const empDataGroup= [];
 
     // Fills array with new jobs and such
@@ -317,22 +333,26 @@ const newJobDescription = () => {
         return inquirer.prompt([
             {
                 type: 'list',
-                message: "Which employee do you want to update?",
+                message: "Which job description do you want to update?",
                 name: 'employee',
                 choices: empDataGroup
             },
             {
                 type: 'list',
-                message: "What is the employee's new role?",
+                message: "What is their new job?",
                 name: 'role',
                 choices: jobDataGroup
             },
+
         ]).then((info) => {
-            // get role id
+
+            // This retrieves needed info
+
             db.query(`SELECT id FROM role WHERE role.title = ?;`, info.role, (error, response) => {
-                role_id = response[0].id;
+                job_typeID = response[0].id;
+
                 db.query(`SELECT id FROM employee WHERE employee.first_name = ? AND employee.last_name = ?;`, info.employee.split(" "), (error, response) => {
-                    db.query(`UPDATE employee SET role_id = ? WHERE id = ?;`, [role_id, response[0].id], (error, response) => {
+                    db.query(`UPDATE employee SET job_typeID = ? WHERE id = ?;`, [job_typeID, response[0].id], (error, response) => {
                         console.log("\nEmployee role updated. See below:");
                         seeWorkers();
                     })
@@ -343,6 +363,8 @@ const newJobDescription = () => {
     })
 })
 }
+
+//I hope you like my project!!!! ")"
 
 /* References
 

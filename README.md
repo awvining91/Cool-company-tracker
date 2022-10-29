@@ -17,8 +17,6 @@ Next we are studying object relational mapping which is kind of crazy. We flew t
 
 https://github.com/awvining91/Cool-company-tracker
 
-## Video Link
-
 
 ## References Used
 
